@@ -25,6 +25,12 @@ class RecipeRepo(mongoClient: CoroutineClient) {
             collection.insertOne(RecipeDao.from(recipe)).wasAcknowledged()
         }
     }
+
+    suspend fun delete(name: String): Result<Long> {
+        return kotlin.runCatching {
+            collection.deleteMany(RecipeDao::name eq name).deletedCount
+        }
+    }
 }
 
 @Serializable

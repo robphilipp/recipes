@@ -19,6 +19,12 @@ class RecipeService(val repo: RecipeRepo) {
             .onFailure { logger.error("Unable to add recipe; name: {}; error: {}", recipe.name, it.message) }
     }
 
+    suspend fun delete(name: String): Result<Long> {
+        return repo
+            .delete(name)
+            .onFailure { logger.error("Unable to delete recipe; error: {}", it.message) }
+    }
+
     companion object {
         private val logger = LoggerFactory.getLogger(RecipeRepo::class.java.name)
     }

@@ -70,6 +70,17 @@ fun Application.configureRouting(service: ShoppingListService, recipeService: Re
                         }
                     }
             }
+
+            delete("/{recipeName}") {
+                val name = call.parameters["recipeName"]?: error("Invalid delete request")
+                recipeService
+                    .delete(name)
+                    .onSuccess { call.respond(DeletedRecipes(name, it)) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError) }
+            }
         }
     }
 }
+
+@Serializable
+data class DeletedRecipes(val recipeName: String, val numDeleted: Long)
