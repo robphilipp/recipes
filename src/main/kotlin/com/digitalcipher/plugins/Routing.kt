@@ -1,19 +1,16 @@
 package com.digitalcipher.plugins
 
-import com.digitalcipher.repositories.ShoppingListRepo
-import com.digitalcipher.repositories.dao.ShoppingListItem
-import io.ktor.routing.*
-import io.ktor.http.*
-import io.ktor.content.*
-import io.ktor.http.content.*
+import com.digitalcipher.repositories.dao.ShoppingListItemDao
+import com.digitalcipher.services.ShoppingListService
 import io.ktor.application.*
-import io.ktor.response.*
+import io.ktor.http.*
+import io.ktor.http.content.*
 import io.ktor.request.*
+import io.ktor.response.*
+import io.ktor.routing.*
 import kotlinx.serialization.Serializable
-import org.litote.kmongo.coroutine.CoroutineCollection
-import org.litote.kmongo.eq
 
-fun Application.configureRouting(repo: ShoppingListRepo) {
+fun Application.configureRouting(service: ShoppingListService) {
 //fun Application.configureRouting(collection: CoroutineCollection<ShoppingListItem>) {
 
     routing {
@@ -26,24 +23,24 @@ fun Application.configureRouting(repo: ShoppingListRepo) {
         }
 
         // REST API
-        route(ShoppingListItem.path) {
+        route(ShoppingListItemDao.path) {
             get {
-                call.respond(repo.items())
+                service.items().onSuccess { call.respond(it) }
             }
 
             post {
-                val acknowledged = repo.add(call.receive())
-                if (acknowledged) {
-                    call.respond(HttpStatusCode.OK)
-                } else {
-                    call.respond(HttpStatusCode.BadRequest)
-                }
+                service
+                    .add(call.receive())
+                    .onSuccess { acknowledged -> if (acknowledged) call.respond(HttpStatusCode.OK) else call.respond(HttpStatusCode.BadRequest) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError) }
             }
 
             delete("/{id}") {
                 val id = call.parameters["id"]?.toInt() ?: error("Invalid delete request")
-                repo.delete(id)
-                call.respond(HttpStatusCode.OK)
+                service
+                    .delete(id)
+                    .onSuccess { call.respond(HttpStatusCode.OK) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError) }
             }
         }
 
