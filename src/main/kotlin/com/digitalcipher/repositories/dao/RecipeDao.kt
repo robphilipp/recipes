@@ -1,6 +1,7 @@
 package com.digitalcipher.repositories.dao
 
 import com.digitalcipher.services.domain.*
+import com.typesafe.config.Optional
 import kotlinx.serialization.Serializable
 import java.math.BigDecimal
 
@@ -22,7 +23,7 @@ data class RecipeDao(val name: String, val ingredients: List<IngredientDao>, val
 }
 
 @Serializable
-data class StepDao(val title: String?, val text: String) {
+data class StepDao(val title: String? = null, val text: String) {
     fun asStep() = Step(title = title, text = text)
     companion object {
         fun from(step: Step) = StepDao(title = step.title, text = step.text)
@@ -30,7 +31,7 @@ data class StepDao(val title: String?, val text: String) {
 }
 
 @Serializable
-data class IngredientDao(val name: String, val amount: AmountDao, val brand: String?) {
+data class IngredientDao(val name: String, val amount: AmountDao, val brand: String? = null) {
     fun asIngredient() = Ingredient(name = name, amount = amount.asAmount(), brand = brand)
 
     companion object {

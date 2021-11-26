@@ -1,6 +1,9 @@
 package com.digitalcipher.plugins
 
+import com.digitalcipher.repositories.NonUniqueName
 import com.digitalcipher.repositories.dao.ShoppingListItemDao
+import com.digitalcipher.rest.mediation.RecipeMo
+import com.digitalcipher.services.RecipeService
 import com.digitalcipher.services.ShoppingListService
 import io.ktor.application.*
 import io.ktor.http.*
@@ -10,7 +13,7 @@ import io.ktor.response.*
 import io.ktor.routing.*
 import kotlinx.serialization.Serializable
 
-fun Application.configureRouting(service: ShoppingListService) {
+fun Application.configureRouting(service: ShoppingListService, recipeService: RecipeService) {
 //fun Application.configureRouting(collection: CoroutineCollection<ShoppingListItem>) {
 
     routing {
@@ -44,8 +47,29 @@ fun Application.configureRouting(service: ShoppingListService) {
             }
         }
 
+        route("/recipes") {
+            get {
+                recipeService.recipes().onSuccess { recipes -> call.respond(recipes.map { RecipeMo.from(it)}) }
+            }
+
+            post {
+                recipeService
+                    .add((call.receive() as RecipeMo).asRecipe())
+                    .onSuccess { acknowledged ->
+                        if (acknowledged) {
+                            call.respond(HttpStatusCode.OK)
+                        } else {
+                            call.respond(HttpStatusCode.BadRequest)
+                        }
+                    }
+                    .onFailure {
+                        if (it is NonUniqueName) {
+                            call.respond(HttpStatusCode.BadRequest, it)
+                        } else {
+                            call.respond(HttpStatusCode.InternalServerError, it)
+                        }
+                    }
+            }
+        }
     }
 }
-
-@Serializable
-data class AddedId(val id: Int)

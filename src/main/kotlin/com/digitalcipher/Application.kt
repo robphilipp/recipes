@@ -4,7 +4,9 @@ import com.digitalcipher.plugins.configureHTTP
 import com.digitalcipher.plugins.configureMonitoring
 import com.digitalcipher.plugins.configureRouting
 import com.digitalcipher.plugins.configureSerialization
+import com.digitalcipher.repositories.RecipeRepo
 import com.digitalcipher.repositories.ShoppingListRepo
+import com.digitalcipher.services.RecipeService
 import com.digitalcipher.services.ShoppingListService
 import io.ktor.application.*
 import io.ktor.config.*
@@ -24,13 +26,13 @@ fun Application.module() {
     val services = createServices(repositories)
 
 //    configureRouting(repositories.shoppingListRepo)
-    configureRouting(services.shoppingList)
+    configureRouting(services.shoppingList, services.recipes)
     configureHTTP()
     configureMonitoring()
     configureSerialization()
 }
 
-data class Repositories(val shoppingList: ShoppingListRepo)
+data class Repositories(val shoppingList: ShoppingListRepo, val recipes: RecipeRepo)
 
 fun createRepositories(config: ApplicationConfig): Repositories {
     val mongoUrl = config.propertyOrNull("ktor.mongo.connectionUrl")?.getString() ?: "oops"
@@ -38,13 +40,15 @@ fun createRepositories(config: ApplicationConfig): Repositories {
 
     // shopping list repo
     val shoppingListRepo = ShoppingListRepo(client.getDatabase("shoppingList").getCollection())
+    val recipeRepo = RecipeRepo(client)
 
-    return Repositories(shoppingListRepo)
+    return Repositories(shoppingListRepo, recipeRepo)
 }
 
-data class Services(val shoppingList: ShoppingListService)
+data class Services(val shoppingList: ShoppingListService, val recipes: RecipeService)
 
 fun createServices(repositories: Repositories): Services {
     val shoppingListService = ShoppingListService(repositories.shoppingList)
-    return Services(shoppingListService)
+    val recipeService = RecipeService(repositories.recipes)
+    return Services(shoppingListService, recipeService)
 }
