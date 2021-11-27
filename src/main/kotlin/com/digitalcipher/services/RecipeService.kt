@@ -19,6 +19,12 @@ class RecipeService(val repo: RecipeRepo) {
             .onFailure { logger.error("Unable to add recipe; name: {}; error: {}", recipe.name, it.message) }
     }
 
+    suspend fun update(recipe: Recipe): Result<Long> {
+        return repo
+            .update(recipe)
+            .onFailure { logger.error("Unable to update recipe; name: {}; error: {}", recipe.name, it.message) }
+    }
+
     suspend fun delete(name: String): Result<Long> {
         return repo
             .delete(name)

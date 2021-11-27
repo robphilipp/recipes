@@ -1,7 +1,9 @@
 package com.digitalcipher.plugins
 
 import com.digitalcipher.repositories.NonUniqueName
+import com.digitalcipher.repositories.RecipeNotFound
 import com.digitalcipher.repositories.dao.ShoppingListItemDao
+import com.digitalcipher.rest.mediation.NewUpdateRecipeMo
 import com.digitalcipher.rest.mediation.RecipeMo
 import com.digitalcipher.services.RecipeService
 import com.digitalcipher.services.ShoppingListService
@@ -49,12 +51,14 @@ fun Application.configureRouting(service: ShoppingListService, recipeService: Re
 
         route("/recipes") {
             get {
-                recipeService.recipes().onSuccess { recipes -> call.respond(recipes.map { RecipeMo.from(it)}) }
+                recipeService.recipes()
+                    .onSuccess { recipes -> call.respond(recipes.map { RecipeMo.from(it)}) }
+                    .onFailure { call.respond(HttpStatusCode.InternalServerError, FailedException(it.message ?: "")) }
             }
 
             post {
                 recipeService
-                    .add((call.receive() as RecipeMo).asRecipe())
+                    .add((call.receive() as NewUpdateRecipeMo).asRecipe())
                     .onSuccess { acknowledged ->
                         if (acknowledged) {
                             call.respond(HttpStatusCode.OK)
@@ -64,6 +68,25 @@ fun Application.configureRouting(service: ShoppingListService, recipeService: Re
                     }
                     .onFailure {
                         if (it is NonUniqueName) {
+                            call.respond(HttpStatusCode.BadRequest, it)
+                        } else {
+                            call.respond(HttpStatusCode.InternalServerError, it)
+                        }
+                    }
+            }
+
+            put {
+                recipeService
+                    .update((call.receive() as NewUpdateRecipeMo).asRecipe())
+                    .onSuccess { modified ->
+                        if (modified > 0) {
+                            call.respond(HttpStatusCode.OK)
+                        } else {
+                            call.respond(HttpStatusCode.BadRequest)
+                        }
+                    }
+                    .onFailure {
+                        if (it is RecipeNotFound) {
                             call.respond(HttpStatusCode.BadRequest, it)
                         } else {
                             call.respond(HttpStatusCode.InternalServerError, it)
@@ -84,3 +107,6 @@ fun Application.configureRouting(service: ShoppingListService, recipeService: Re
 
 @Serializable
 data class DeletedRecipes(val recipeName: String, val numDeleted: Long)
+
+@Serializable
+data class FailedException(val error: String): Exception(error)

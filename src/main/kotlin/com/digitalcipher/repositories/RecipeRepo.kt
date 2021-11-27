@@ -26,6 +26,18 @@ class RecipeRepo(mongoClient: CoroutineClient) {
         }
     }
 
+    suspend fun update(recipe: Recipe): Result<Long> {
+        return kotlin.runCatching {
+            val originals = collection.find(RecipeDao::name eq recipe.name).toList()
+            if (originals.size != 1) {
+//            if (collection.countDocuments(RecipeDao::name eq recipe.name) == 0L) {
+                return Result.failure(RecipeNotFound("Recipe not found", recipe.name))
+            }
+            val updated = RecipeDao.asModified(recipe, originals[0].createdOn)
+            collection.updateOne(RecipeDao::name eq recipe.name, updated).modifiedCount
+        }
+    }
+
     suspend fun delete(name: String): Result<Long> {
         return kotlin.runCatching {
             collection.deleteMany(RecipeDao::name eq name).deletedCount
@@ -35,3 +47,6 @@ class RecipeRepo(mongoClient: CoroutineClient) {
 
 @Serializable
 data class NonUniqueName(val error: String, val recipeName: String): Exception(error)
+
+@Serializable
+data class RecipeNotFound(val error: String, val recipeName: String): Exception(error)
