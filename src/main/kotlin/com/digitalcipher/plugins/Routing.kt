@@ -19,12 +19,17 @@ fun Application.configureRouting(service: ShoppingListService, recipeService: Re
 //fun Application.configureRouting(collection: CoroutineCollection<ShoppingListItem>) {
 
     routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
+//        get("/") {
+//            call.respondText("Hello World!")
+//        }
         // Static plugin. Try to access `/static/index.html`
-        static("/static") {
-            resources("static")
+//        static("/app") {
+        static {
+//            resources("static")
+//            files("/Users/rob/code/recipes/recipes-ui/out")
+//            default("/Users/rob/code/recipes/recipes-ui/out/index.html")
+            files("ui")
+            default("ui/index.html")
         }
 
         // REST API
@@ -49,7 +54,7 @@ fun Application.configureRouting(service: ShoppingListService, recipeService: Re
             }
         }
 
-        route("/recipes") {
+        route("/rest/v1/recipes") {
             get {
                 recipeService.recipes()
                     .onSuccess { recipes -> call.respond(recipes.map { RecipeMo.from(it)}) }

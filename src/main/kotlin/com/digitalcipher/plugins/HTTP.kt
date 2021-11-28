@@ -1,11 +1,8 @@
 package com.digitalcipher.plugins
 
+import io.ktor.application.*
 import io.ktor.features.*
 import io.ktor.http.*
-import io.ktor.application.*
-import io.ktor.response.*
-import io.ktor.request.*
-import io.ktor.serialization.*
 
 fun Application.configureHTTP() {
     install(Compression) {
